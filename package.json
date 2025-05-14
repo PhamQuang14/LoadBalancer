@@ -12,6 +12,6 @@
     "http-proxy": "^1.18.1"
   },
   "engines": {
-    "node": "14.x"
+    "node": "22.x"
   }
 }
