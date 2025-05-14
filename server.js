@@ -4,7 +4,6 @@ const https = require('https');
 
 const proxy = httpProxy.createProxyServer({ changeOrigin: true });
 
-// Danh sách server
 const servers = [
     { url: 'https://demo-deloy-game.vercel.app/', activeRequests: 0, healthy: true },
     { url: 'https://gskserver2.netlify.app/', activeRequests: 0, healthy: true },
@@ -13,15 +12,14 @@ const servers = [
     { url: 'https://gskserver5.web.app/', activeRequests: 0, healthy: true },
 ];
 
-// Hàm lấy server ngẫu nhiên trong số các server khỏe mạnh
-function getRandomHealthyServer() {
+function getLeastConnectionsServer() {
     const healthyServers = servers.filter(s => s.healthy);
     if (healthyServers.length === 0) return null;
-    const randomIndex = Math.floor(Math.random() * healthyServers.length);
-    return healthyServers[randomIndex];
+    return healthyServers.reduce((prev, curr) =>
+        curr.activeRequests < prev.activeRequests ? curr : prev
+    );
 }
 
-// Kiểm tra server còn sống hay không
 function healthCheck() {
     servers.forEach(server => {
         https.get(server.url, res => {
@@ -34,12 +32,10 @@ function healthCheck() {
     });
 }
 
-// Thực hiện health check định kỳ
-setInterval(healthCheck, 10000); // 10 giây
+setInterval(healthCheck, 10000);
 
-// Server chính (load balancer)
 const server = http.createServer((req, res) => {
-    const targetServer = getRandomHealthyServer();
+    const targetServer = getLeastConnectionsServer();
 
     if (!targetServer) {
         res.writeHead(503);
@@ -60,7 +56,6 @@ const server = http.createServer((req, res) => {
     });
 });
 
-// Sử dụng biến môi trường PORT
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Load balancer running on port ${PORT}`);
