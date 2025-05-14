@@ -22,7 +22,7 @@ function getLeastConnectionsServer() {
     );
 }
 
-// Kiểm tra server còn sống hay kk
+// Kiểm tra server còn sống hay không
 function healthCheck() {
     servers.forEach(server => {
         https.get(server.url, res => {
@@ -47,11 +47,13 @@ const server = http.createServer((req, res) => {
         return res.end('No healthy servers available');
     }
 
+    console.log(`Routing request to: ${targetServer.url}`); // Log server being used
     targetServer.activeRequests++;
     proxy.web(req, res, { target: targetServer.url }, (err) => {
+        targetServer.activeRequests--; // Giảm activeRequests khi có lỗi
+        console.error('Proxy error:', err);
         res.writeHead(502);
         res.end('Bad gateway');
-        targetServer.activeRequests--;
     });
 
     res.on('finish', () => {
